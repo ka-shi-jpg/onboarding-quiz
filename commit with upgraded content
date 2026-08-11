@@ -1,0 +1,900 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>The Cutting Room — Ad Editor Training</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Figtree:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
+<style>
+  :root{
+    --bg:#0D0D14; --bg-2:#090910;
+    --panel:#16161F; --panel-2:#1E1E2B; --panel-3:#282837;
+    --line:#2E2E3E; --line-2:#3B3B4F;
+    --text:#EDEDF4; --text-2:#B4B4C6; --muted:#7F7F98;
+    --good:#34D399; --good-soft:rgba(52,211,153,.14);
+    --bad:#FB6E7E;  --bad-soft:rgba(251,110,126,.14);
+    --accent:#A78BFA; --accent-soft:rgba(167,139,250,.15);
+    --radius:13px;
+    --shadow:0 20px 48px -20px rgba(0,0,0,.75);
+    --mono:'JetBrains Mono',ui-monospace,monospace;
+    --disp:'Bricolage Grotesque',system-ui,sans-serif;
+    --body:'Figtree',system-ui,sans-serif;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{
+    background:
+      radial-gradient(900px 500px at 12% -8%, rgba(167,139,250,.10), transparent 60%),
+      radial-gradient(900px 500px at 92% 4%, rgba(56,189,248,.08), transparent 60%),
+      var(--bg);
+    color:var(--text); font-family:var(--body); font-size:16px; line-height:1.62;
+    -webkit-font-smoothing:antialiased; min-height:100vh;
+  }
+  a{color:var(--accent)}
+  button{font-family:inherit}
+  ::selection{background:var(--accent-soft);color:#fff}
+
+  .wrap{max-width:940px;margin:0 auto;padding:22px}
+  @media(max-width:600px){.wrap{padding:14px}}
+
+  .topbar{display:flex;align-items:center;gap:14px;margin-bottom:18px;flex-wrap:wrap}
+  .rec{width:11px;height:11px;border-radius:50%;background:var(--accent);box-shadow:0 0 0 0 var(--accent);animation:pulse 2.4s infinite;flex:none}
+  @keyframes pulse{0%{box-shadow:0 0 0 0 rgba(167,139,250,.5)}70%{box-shadow:0 0 0 9px rgba(167,139,250,0)}100%{box-shadow:0 0 0 0 rgba(167,139,250,0)}}
+  .brand .kick{font-family:var(--mono);font-size:10.5px;letter-spacing:.24em;color:var(--muted);text-transform:uppercase}
+  .brand h1{font-family:var(--disp);font-weight:800;letter-spacing:-.02em;font-size:clamp(20px,2.6vw,28px);margin:1px 0 0;line-height:1}
+  .top-tools{margin-left:auto;display:flex;gap:8px;flex-wrap:wrap}
+  .admin-badge{font-family:var(--mono);font-size:11px;letter-spacing:.06em;color:#0c1b17;background:var(--good);padding:6px 11px;border-radius:8px;display:inline-flex;align-items:center;gap:6px}
+  .tool{font-family:var(--mono);font-size:12px;color:var(--text-2);background:var(--panel-2);border:1px solid var(--line-2);padding:8px 11px;border-radius:9px;cursor:pointer;transition:.15s}
+  .tool:hover{border-color:var(--accent);color:var(--text)}
+
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow)}
+  .pad{padding:30px 34px}
+  @media(max-width:600px){.pad{padding:22px 18px}}
+
+  .eyebrow{font-family:var(--mono);font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--accent);display:flex;gap:9px;align-items:center}
+  .eyebrow .sq{width:8px;height:8px;background:var(--accent);border-radius:2px}
+  .title{font-family:var(--disp);font-weight:800;letter-spacing:-.02em;line-height:1.03;font-size:clamp(26px,4.2vw,42px);margin:12px 0 6px}
+  .subtitle{color:var(--text-2);font-size:clamp(15px,1.7vw,18px);max-width:64ch}
+
+  .start-lead{color:var(--text-2);font-size:16px;margin:14px 0 22px;max-width:60ch}
+  .field label{display:block;font-family:var(--mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:7px}
+  .field input{width:100%;background:var(--panel-2);border:1px solid var(--line-2);border-radius:10px;color:var(--text);font-family:var(--body);font-size:15px;padding:13px 14px}
+  .field input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+  .field{margin-bottom:18px}
+  .warn{background:linear-gradient(180deg,rgba(251,191,36,.12),rgba(251,191,36,.06));border:1px solid rgba(251,191,36,.35);border-radius:12px;padding:15px 17px;margin:4px 0 22px}
+  .warn h4{margin:0 0 8px;font-size:13px;font-family:var(--mono);letter-spacing:.08em;text-transform:uppercase;color:#f5c451}
+  .warn ul{margin:0;padding:0;list-style:none}
+  .warn li{position:relative;padding-left:20px;margin-bottom:6px;color:#f0ddb2;font-size:14px}
+  .warn li:last-child{margin-bottom:0}
+  .warn li::before{content:"!";position:absolute;left:4px;top:0;color:#f5c451;font-weight:700;font-family:var(--mono)}
+  .err{color:var(--bad);font-size:13px;margin:-8px 0 14px;min-height:18px}
+  .admin-row{margin-top:18px;padding-top:16px;border-top:1px dashed var(--line-2)}
+  .admin-toggle{background:none;border:none;color:var(--muted);font-family:var(--mono);font-size:12px;letter-spacing:.06em;cursor:pointer;padding:0;display:inline-flex;align-items:center;gap:7px}
+  .admin-toggle:hover{color:var(--text-2)}
+  .admin-panel{margin-top:14px;display:none}
+  .admin-panel.show{display:block}
+  .admin-fields{display:flex;gap:10px;flex-wrap:wrap}
+  .admin-fields input{flex:1;min-width:160px}
+
+  .tl-meta{display:flex;justify-content:space-between;align-items:baseline;font-family:var(--mono);font-size:11px;color:var(--muted);letter-spacing:.06em;margin:0 2px 8px}
+  .tl-meta b{color:var(--accent);font-weight:500}
+  .timeline{display:flex;gap:5px;overflow-x:auto;padding-bottom:8px;margin-bottom:20px;scrollbar-width:thin}
+  .timeline::-webkit-scrollbar{height:6px}
+  .timeline::-webkit-scrollbar-thumb{background:var(--line-2);border-radius:3px}
+  .seg{position:relative;flex:1 1 0;min-width:64px;background:var(--panel);border:1px solid var(--line);border-radius:9px;padding:9px 9px 10px;text-align:left;color:var(--muted);overflow:hidden;cursor:default}
+  .seg.clickable{cursor:pointer}
+  .seg.clickable:hover{border-color:var(--line-2)}
+  .seg .fill{position:absolute;inset:0;opacity:.16;width:0;transition:width .5s}
+  .seg.done .fill{width:100%}
+  .seg .num{font-family:var(--mono);font-size:12px;position:relative}
+  .seg .ic{position:absolute;top:8px;right:9px;font-size:11px}
+  .seg.active{color:var(--text)}
+  .seg.done{color:var(--text-2)}
+  .seg.active::after{content:"";position:absolute;left:50%;bottom:-1px;transform:translateX(-50%);width:60%;height:3px;border-radius:3px;background:var(--seg-accent)}
+
+  .rule{height:1px;background:linear-gradient(90deg,var(--accent),var(--line) 42%,transparent);margin:22px 0 2px;opacity:.7}
+  .prose{margin-top:20px;max-width:70ch}
+  .prose p{margin:0 0 15px}
+  .prose h3{font-family:var(--disp);font-weight:700;font-size:19px;letter-spacing:-.01em;margin:26px 0 10px;color:#fff}
+  .prose strong{color:#fff;font-weight:700}
+  .prose ul{margin:0 0 16px;padding:0;list-style:none}
+  .prose li{position:relative;padding-left:22px;margin-bottom:8px;color:var(--text-2)}
+  .prose li::before{content:"";position:absolute;left:2px;top:11px;width:7px;height:7px;background:var(--accent);border-radius:1.5px;transform:rotate(45deg)}
+  .prose li strong{color:var(--text)}
+  .callout{background:var(--accent-soft);border:1px solid var(--accent);border-radius:11px;padding:13px 16px;margin:0 0 16px;color:var(--text)}
+  .callout::before{content:"NOTE";font-family:var(--mono);font-size:10px;letter-spacing:.2em;color:var(--accent);display:block;margin-bottom:5px}
+  .diagram{margin:6px 0 20px;padding:16px 16px 10px;background:var(--panel-2);border:1px solid var(--line);border-radius:12px}
+  .diagram svg{display:block;font-family:var(--body)}
+  .diagram figcaption{font-family:var(--mono);font-size:11px;color:var(--muted);text-align:center;margin-top:10px;letter-spacing:.02em}
+
+  .quiz{margin-top:6px;padding-top:24px;border-top:1px dashed var(--line-2)}
+  .quiz-h{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:6px}
+  .quiz-h .lab{font-family:var(--disp);font-weight:800;font-size:21px}
+  .quiz-h .cnt{font-family:var(--mono);font-size:11px;color:var(--muted);margin-left:auto}
+  .warn-mini{font-family:var(--mono);font-size:11px;color:#f5c451;margin:2px 0 18px}
+  .scorebar{height:6px;background:var(--panel-3);border-radius:99px;overflow:hidden;margin-bottom:22px}
+  .scorebar i{display:block;height:100%;width:0;background:var(--accent);transition:width .4s}
+  .q{border:1px solid var(--line);background:var(--panel-2);border-radius:12px;padding:18px 18px 8px;margin-bottom:15px}
+  .q .qhead{display:flex;gap:11px;margin-bottom:13px}
+  .q .qn{font-family:var(--mono);font-size:12px;color:var(--accent);padding-top:2px;min-width:26px}
+  .q .qt{font-weight:600;font-size:16px;line-height:1.45}
+  .opt{display:flex;gap:12px;align-items:flex-start;width:100%;text-align:left;cursor:pointer;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:12px 14px;margin-bottom:9px;color:var(--text-2);transition:.13s;font-size:15px}
+  .opt:hover:not(:disabled){border-color:var(--line-2);color:var(--text)}
+  .opt:disabled{cursor:default}
+  .opt .key{font-family:var(--mono);font-size:12px;color:var(--muted);border:1px solid var(--line-2);border-radius:6px;min-width:24px;height:24px;display:grid;place-items:center;flex:none}
+  .opt.correct{border-color:var(--good);background:var(--good-soft);color:#d6f5e6}
+  .opt.correct .key{border-color:var(--good);color:var(--good)}
+  .opt.wrong{border-color:var(--bad);background:var(--bad-soft);color:#f7dde1}
+  .opt.wrong .key{border-color:var(--bad);color:var(--bad)}
+  .opt.dim{opacity:.5}
+  .opt .locktag{margin-left:auto;font-family:var(--mono);font-size:10px;align-self:center;white-space:nowrap}
+  .explain{font-size:14px;color:var(--text-2);border-left:2px solid var(--accent);padding-left:13px;margin:2px 2px 14px;display:none}
+  .explain.show{display:block}
+  .explain b{color:var(--accent);font-family:var(--mono);font-size:10px;letter-spacing:.12em;display:block;margin-bottom:3px}
+
+  .btn{font-family:var(--body);font-weight:600;font-size:15px;cursor:pointer;border-radius:11px;padding:14px 18px;border:1px solid var(--line-2);background:var(--panel-2);color:var(--text);transition:.15s;display:inline-flex;align-items:center;justify-content:center;gap:8px;width:100%}
+  .btn:hover{border-color:var(--line-2);background:var(--panel-3)}
+  .btn.pri{background:var(--accent);border-color:var(--accent);color:#140a25;font-weight:700}
+  .btn.pri:hover{filter:brightness(1.08)}
+  .btn:disabled{opacity:.4;cursor:not-allowed}
+  .btn-row{margin-top:22px}
+  .subnote{font-family:var(--mono);font-size:11px;color:var(--muted);text-align:center;margin-top:9px}
+
+  .sc-head{text-align:center;margin-bottom:8px}
+  .sc-rows{margin:18px 0}
+  .sc-row{display:flex;align-items:center;gap:12px;padding:11px 0;border-bottom:1px solid var(--line)}
+  .sc-row:last-child{border-bottom:none}
+  .sc-dot{width:10px;height:10px;border-radius:3px;flex:none}
+  .sc-name{font-size:14.5px;flex:1;min-width:0}
+  .sc-name b{font-weight:600}
+  .sc-name span{color:var(--muted);font-size:12px;margin-left:6px}
+  .sc-score{font-family:var(--mono);font-size:14px;font-weight:500}
+  .sc-mini{height:5px;width:70px;background:var(--panel-3);border-radius:99px;overflow:hidden;flex:none}
+  .sc-mini i{display:block;height:100%}
+  .sc-total{background:linear-gradient(180deg,var(--panel-2),var(--panel));border:1px solid var(--accent);border-radius:14px;padding:22px 24px;display:flex;align-items:center;gap:20px;flex-wrap:wrap;margin-top:8px}
+  .sc-total .big{font-family:var(--disp);font-weight:800;font-size:clamp(38px,7vw,54px);line-height:1}
+  .sc-total .big.pass{color:var(--good)} .sc-total .big.fail{color:#f5c451}
+  .sc-total .msg{flex:1;min-width:170px}
+  .sc-total .msg h4{margin:0 0 3px;font-family:var(--disp);font-size:20px}
+  .sc-total .msg p{margin:0;color:var(--text-2);font-size:14px}
+  .sc-foot{font-family:var(--mono);font-size:11px;color:var(--muted);text-align:center;margin-top:16px}
+
+  .overlay{position:fixed;inset:0;background:rgba(5,5,9,.74);backdrop-filter:blur(4px);z-index:60;display:none;align-items:flex-start;justify-content:center;padding:30px 14px;overflow:auto}
+  .overlay.show{display:flex}
+  .modal{width:100%;max-width:740px;background:var(--panel);border:1px solid var(--line-2);border-radius:16px;box-shadow:var(--shadow)}
+  .modal-h{display:flex;align-items:center;gap:12px;padding:17px 20px;border-bottom:1px solid var(--line)}
+  .modal-h h3{font-family:var(--disp);font-weight:800;margin:0;font-size:19px}
+  .modal-h .x{margin-left:auto;background:var(--panel-2);border:1px solid var(--line-2);border-radius:8px;width:34px;height:34px;color:var(--text-2);cursor:pointer;font-size:18px}
+  .modal-b{padding:18px 20px}
+  .modal-f{display:flex;gap:10px;padding:15px 20px;border-top:1px solid var(--line)}
+  .modal-f .btn{width:auto;flex:none}
+  .spacer{flex:1}
+  .mrow{display:flex;gap:10px;align-items:center;background:var(--panel-2);border:1px solid var(--line);border-radius:10px;padding:9px 11px;margin-bottom:8px}
+  .mrow .mc{font-family:var(--mono);font-size:12px;color:var(--accent);min-width:28px}
+  .mrow .mt{flex:1;font-weight:600;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .mrow .mbtn{background:var(--panel-3);border:1px solid var(--line-2);color:var(--text-2);border-radius:7px;cursor:pointer;font-family:var(--mono);font-size:11px;padding:6px 9px}
+  .mrow .mbtn:hover{color:var(--text);border-color:var(--accent)}
+  .mrow .mbtn.danger:hover{color:var(--bad);border-color:var(--bad)}
+  .medit .field{margin-bottom:13px}
+  .medit textarea,.medit input{width:100%;background:var(--panel-2);border:1px solid var(--line-2);border-radius:9px;color:var(--text);font-family:var(--body);font-size:14px;padding:10px 12px;resize:vertical}
+  .medit textarea{min-height:150px;line-height:1.5}
+  .medit .hint{font-size:12px;color:var(--muted);margin-top:5px}
+  .qedit{border:1px solid var(--line);border-radius:10px;padding:12px;margin-bottom:10px;background:var(--panel-2)}
+  .qtop{display:flex;gap:8px;margin-bottom:8px}
+  .qtop input{flex:1}
+  .optline{display:flex;gap:8px;align-items:center;margin-bottom:6px}
+  .optline input[type=text]{flex:1}
+  .optline input[type=radio]{accent-color:var(--accent);width:17px;height:17px}
+  .optline .rm{background:none;border:none;color:var(--muted);cursor:pointer;font-size:16px}
+
+  .toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%) translateY(18px);background:var(--panel-3);border:1px solid var(--accent);color:var(--text);padding:11px 18px;border-radius:10px;font-size:14px;z-index:80;opacity:0;pointer-events:none;transition:.25s}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+  .footer{max-width:940px;margin:12px auto 40px;padding:0 22px;color:var(--muted);font-family:var(--mono);font-size:11px;letter-spacing:.05em}
+
+  @media (prefers-reduced-motion: reduce){*{animation:none!important;transition:none!important}}
+  :focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:8px}
+</style>
+</head>
+<body>
+  <div class="wrap" id="app"></div>
+  <div class="footer" id="footer"></div>
+  <div class="overlay" id="overlay"><div class="modal" role="dialog" aria-modal="true">
+    <div class="modal-h"><h3 id="modalTitle">Manage modules</h3><button class="x" id="modalClose" aria-label="Close">×</button></div>
+    <div class="modal-b" id="modalBody"></div><div class="modal-f" id="modalFooter"></div>
+  </div></div>
+  <div class="toast" id="toast"></div>
+
+<script>
+/* ============================================================================
+   THE CUTTING ROOM — editable module data
+   ----------------------------------------------------------------------------
+   • Edit modules directly below, OR use "Manage modules" in admin mode, then
+     "Export" to save your changes as JSON.
+   • ADMIN_CODE (just below) is the passcode that unlocks all modules on the
+     start screen. Change it to whatever you like.
+   • Email delivery is OFF (collect-only). To turn it on later, wire one service
+     inside deliverResults() near the bottom — the spot is marked.
+   • Lesson markup: "## heading", "- bullet", "> note", blank line = paragraph,
+     "**bold**".  Each question: { q, options:[...], answer:<index>, explain }.
+   ========================================================================== */
+const ADMIN_CODE = "cutadmin";      // <-- change this passcode
+const PASS = 0.7;                   // pass mark for the scorecard badge
+
+const DEFAULT_MODULES = [
+  { num:"1", color:"#A78BFA", title:"Purpose of the SOP",
+    subtitle:"Why this playbook exists and the standard every ad is held to.",
+    lesson:
+`This SOP gives every editor a **clear, structured, repeatable process** for making video and static ads — so every ad keeps the same creativity, clarity, and conversion focus, no matter who edits it.
+
+> The editing tool used throughout this SOP is **Adobe Premiere Pro** — all the workflow steps and examples assume you're working in Premiere Pro.
+
+## The goal
+Help every editor work **smarter, faster, and more effectively** while holding a consistent brand identity and high production standard.
+
+> The real test: no matter who edits an ad, it should look like it came from the same skilled team.
+
+Strategists write a script built to convert. Your job as an editor is to bring it to life visually — so viewers stop scrolling, watch to the end, and click.
+
+## Why it exists
+As the team grows, everyone needs the same creative direction and workflow. This SOP is here to:
+- **Ensure consistency** — every ad aligns with the brand's visual and emotional tone.
+- **Save time** — proven workflows mean you don't reinvent the process each brief.
+- **Maintain quality** — each video meets our standards for pacing, audio, text, and visuals.
+- **Simplify onboarding** — new editors get up to speed fast, without hours of hand-holding.
+- **Encourage innovation** — a solid foundation lets you build creative variations confidently.
+
+> Consistency and creativity aren't opposites. The SOP is the floor you build on, not a cage.`,
+    questions:[
+      {q:"What is the core purpose of this SOP?",options:["A repeatable process for consistent, conversion-focused ads","Automation to replace human editors","A legal contract between editors and clients","A pricing guide for ads"],answer:0,explain:"The SOP is a clear, repeatable process so quality stays consistent no matter who edits."},
+      {q:"Whose job is it to bring the converting script to life visually?",options:["The creative strategist","The client","The editor","The media buyer"],answer:2,explain:"Strategists write the converting script; the editor makes it visual enough to stop the scroll and drive the click."},
+      {q:"Which of these is NOT one of the five reasons the SOP exists?",options:["Save time","Maintain quality","Guarantee every ad goes viral","Simplify onboarding"],answer:2,explain:"The five reasons are consistency, saving time, quality, onboarding, and innovation."},
+      {q:"How does the SOP treat creativity?",options:["It bans creative variation to keep ads identical","It encourages innovation on a consistent foundation","It leaves creativity undefined","It allows creativity only for senior editors"],answer:1,explain:"The SOP is a foundation that lets editors build creative variations confidently."},
+      {q:"'Save time' in this SOP mainly means…",options:["Following proven workflows instead of reinventing the process","Skipping the review checklist","Using fewer b-rolls","Exporting at lower resolution"],answer:0,explain:"Proven workflows let editors move efficiently without starting from scratch each brief."},
+      {q:"For a new editor, the SOP is designed to…",options:["Replace their training entirely","Help them ramp up quickly without long onboarding","Slow them down with red tape","Restrict them to static ads only"],answer:1,explain:"Simplified onboarding means new editors understand expectations fast."}
+    ]},
+
+  { num:"2", color:"#FB7185", title:"What Makes a Great Ad",
+    subtitle:"The mindset, the hook, the cuts, and the elements every winning ad shares.",
+    lesson:
+`Before editing, decide **who the ad is for** — gender and age — then edit for how that person watches.
+
+## Purpose-driven pacing
+- **Younger viewers (teens–40s)** are doomscrolling. Grab them with fast cuts, animation, b-rolls, and energetic pacing.
+- **Older viewers (45+)** aren't rushing. Once the hook lands they'll patiently watch, even a simple talking clip.
+
+The **inspiration video in the brief** shows the target pacing and tone to replicate. It also shows the style and captions to use, unless specified otherwise.
+
+## The elements of a winning ad
+A scroll-stopping **hook** (visual + audio), then **pacing and flow** to the end. Because our brands are health and supplement products, the **avatar and voice must be ultra-realistic** — fake anything kills trust. **B-rolls** match the script and show the mechanism, **transitions and zooms** add energy, everything stays inside the **safe zone**, and **music** sets the mood without overpowering the voice.
+
+## The hook — the most important part
+It filters the audience in the first three seconds and combines **visual, audio, and text overlay**. Three hook types:
+- **Curiosity-driven** — intrigue or a surprising result.
+- **Disgust / shock-driven** — an instant gut reaction; must look realistic, not cartoonish.
+- **Problem-addressing** — calls out the viewer's exact problem.
+
+Text overlays matter because many people scroll on mute, and humans instinctively read on-screen text.
+
+## Audio pacing
+- Cut out pauses, breaths, and unnecessary parts.
+- Use the **waveform** to cut precisely — don't chop off letters or words. Use the **razor tool** to cut the beginning and end of the unnecessary parts, then delete each of them.
+- Use **Sequence > Close Gap** to instantly remove all silences instead of dragging clips by hand.
+
+## Three cuts every editor uses
+- **J-cut** — the audio of the next clip starts **before** its visual appears.
+- **L-cut** — the audio of the current clip **continues** after the next visual begins.
+- **Jump cut** — your most-used cut. Keep it seamless with **"Cut the Head and Keep the Tail."**
+
+**"Cut the Head and Keep the Tail"** means: remove the **start** of the next line up to where its audio begins, and **keep a little of the previous line** even after it finishes. This makes the jump feel natural instead of rushed or choppy.
+
+> Safe zone & export: keep captions, text overlays, product b-rolls and packaging inside the safe zone. Video is **9:16, 1080×1920 only**.`,
+    questions:[
+      {q:"For a younger, doomscrolling audience, your pacing should be…",options:["Slow, with long talking clips","Fast and energetic — quick cuts, animation, b-rolls","Silent with no music","Static images only"],answer:1,explain:"Younger viewers need fast, energetic pacing so they have to focus to keep up."},
+      {q:"Why must AI avatars and voices look and sound ultra-realistic?",options:["To win design awards","Because our brands live on trust and authenticity","To reduce render time","Because platforms require it"],answer:1,explain:"Any hint of fakeness destroys trust and the viewer skips."},
+      {q:"In a J-cut, the audio of the next clip…",options:["Starts before its visual appears","Continues after the next visual begins","Is muted entirely","Plays only on captions"],answer:0,explain:"J-cut = next clip's audio leads its visual, smoothing scene changes."},
+      {q:"In an L-cut, the audio of the current clip…",options:["Cuts off exactly with the visual","Continues even after the next visual begins","Is replaced by music","Speeds up"],answer:1,explain:"L-cut = current audio carries into the next visual for a cinematic feel."},
+      {q:"The technique that makes jump cuts seamless is called…",options:["Split the difference","Cut the Head and Keep the Tail","Match on action","Freeze and hold"],answer:1,explain:"Remove the head of the next line up to the audio; keep a bit of the previous line's tail."},
+      {q:"An ad opens with a realistic (not cartoonish) shot meant to make the viewer instantly react 'is that happening inside me?!' Which hook type is this?",options:["Curiosity-driven","Disgust or shock-driven","Problem-addressing","Discount-driven"],answer:1,explain:"A shock hook triggers an instant gut reaction and must look realistic. The three types are curiosity, disgust/shock, and problem-addressing."}
+    ]},
+
+  { num:"3", color:"#34D399", title:"Workflow",
+    subtitle:"How one edit turns into every Hook + CTA version you deliver.",
+    lesson:
+`**What this module does:** shows how one edit becomes every Hook + CTA version you deliver.
+
+## Two kinds of voice you'll make
+- A **talking-head avatar** that you generate on AI tools in parts.
+- A **voiceover** that you'll add b-rolls onto later.
+
+## Step 1
+Generate every talking clip / the whole voiceover in one go: all your Hooks, the Body (the main part), and all your CTAs. Not sure how to say a word? Check it on Google.
+
+## Step 2 — line them up
+Drop them all onto one timeline in order — all Hooks, then the Body, then all CTAs. This is your **master timeline**.
+[[diagram:timeline]]
+
+> Now edit the whole batch together, using what you've learned / will learn in the other modules.
+
+## Step 3 — nest the Body
+Bundle the finished Body into a single clip (this is called **nesting**). Include the A-roll, b-roll, voiceover, sound effects, and captions — but **not** the background music. Name it clearly, e.g. \`Body_Batch_Brand\`.
+
+## Step 4 — copy for each combination
+Duplicate the **master sequence** for every Hook + CTA pair. Name each copy like \`HOOK 1 Batch 23 CTA 3\`.
+[[diagram:nesting]]
+
+## Step 5 — trim & export
+In each copy, keep one Hook + the Body + one CTA, delete the rest, then **export at 30fps, 1080p**.
+
+## Why nesting the Body is worth it
+- Any change to the Body updates **every version automatically**.
+- New elements you add (text, overlays) apply **everywhere**.
+- Saves time and stops fixes from being missed across edits.`,
+    questions:[
+      {q:"When you nest the finished Body into one clip, what should you leave out?",options:["Background music","Captions","Voiceover","Sound effects"],answer:0,explain:"Nest the A-roll, b-roll, voiceover, SFX and captions — but leave out the background music."},
+      {q:"What order do the clips go in on the master timeline?",options:["All Hooks → Body → all CTAs","Body → Hooks → CTAs","CTAs → Body → Hooks","Body → CTAs → Hooks"],answer:0,explain:"Arrange Hook 1, Hook 2, Hook 3… then the Body, then CTA 1, CTA 2, CTA 3."},
+      {q:"What's the naming convention for each Hook + CTA copy?",options:["HOOK <#> Batch <#> CTA <#>","Brand_Date_Version","CTA <#> then Hook <#>","Just the batch number"],answer:0,explain:"Name each copy like HOOK 1 Batch 23 CTA 3 — clear names make exporting and edits easier."},
+      {q:"What settings do you export each finished deliverable at?",options:["30fps, 1080p","24fps, 720p","60fps, 4K","25fps, 1080p"],answer:0,explain:"Export each deliverable at 30fps, 1080p."},
+      {q:"How does nesting the Body help?",options:["Every version shares one editable Body — fix it once and all versions update","It shrinks the export file","It adds background music automatically","It speeds up rendering"],answer:0,explain:"Nesting links every Hook × CTA combination to one editable Body, so one fix updates them all."}
+    ]},
+
+  { num:"4", color:"#F472B6", title:"AI Voiceovers",
+    subtitle:"Cloning, remixing, fixing, and grounding a voice in a believable environment.",
+    lesson:
+`Great voiceovers are built in **Eleven Labs** and then blended into their environment with subtle sound — a street selfie video shouldn't sound like a clean studio recording.
+
+## First steps
+- Read the script and watch the reference video.
+- Copy the script into **Eleven Labs** (the AI voice tool).
+- Remove any unnecessary "hooks + body" text early, so there's less to edit later.
+- Use **ALL CAPS** to emphasize words in the voiceover (e.g. NEVER, HOME).
+- Proofread for missing punctuation or grammar errors.
+
+## Cloning a voice
+Start with a clear voice sample. Use **Voice Isolator** to strip out music or unwanted sounds if needed — but if it's **just light background noise, leave it in**, because that bit of noise helps the cloned voice sound natural. You can also use **vocalremover.org/splitter-ai** to separate the voice from the instruments. Generate the voiceover with the **Eleven Multilingual v2** model.
+- If takes sound flat, add **Voice Tags** like [calm], [excited], [angry]. You can draft them with ChatGPT, but always read aloud and adjust yourself.
+- Prefer cloning the voice from the **inspiration video** — it's already tested.
+
+## Remixing (accent, age, emotion, gender)
+Use **Voice Remixing** and set Prompt Strength: **Low** (clarity/tone/speed), **Medium** (accent/age), **High** (emotion), **Max** (gender).
+
+## Fixing words & speed
+Use **Eleven Labs Studio → Transcribe & Edit Speech** to swap a brand name or fix a line seamlessly — it keeps the original tone and pacing, and adjusts speed without changing pitch.
+
+## Realism, distance & depth
+Match ambience to the scene (a low car-interior hum, a small-room reverb). To make a voice feel far from the camera, **reduce the high frequencies with a low-pass filter** for a muffled tone, add a touch of reverb, and drop the loudness a little.
+
+## Music
+Add music last, matched to mood: **dark / suspenseful for conspiracy or "Big Pharma" ads**, soft/chill/upbeat for UGC. Keep it low enough that the voice stays clear.
+
+To find the exact track from the inspiration video: isolate the audio (Voice Isolator or vocalremover.org), turn up the isolated music/instruments, then identify it with Google's "search a song" feature or Shazam.`,
+    questions:[
+      {q:"When generating a voiceover from your cloned voice, which model should you always select?",options:["Eleven Multilingual v2","An English-only model","Voice Isolator","Voice Changer"],answer:0,explain:"Generate speech from the clone with the Eleven Multilingual v2 model."},
+      {q:"Every generated take sounds flat and monotone. What's the recommended fix?",options:["Add Voice Tags like [calm], [excited], [angry] to the script","Re-record the sample louder","Max out the Stability slider","Switch to a different voice"],answer:0,explain:"Voice Tags add emotion and phonetic variation — draft with ChatGPT, but read aloud and adjust yourself."},
+      {q:"You need to swap one brand name in an existing voiceover without re-cloning. Use…",options:["Eleven Labs Studio → Transcribe & Edit Speech","Voice Isolator","Voice Changer","The Sound Effects panel"],answer:0,explain:"Studio's Transcribe & Edit Speech replaces words seamlessly, keeping tone and pacing."},
+      {q:"The avatar is filming a selfie video inside a car stopped at a red light. To keep the voice believable, you should…",options:["Add a soft, low car-interior hum under the voice","Keep it studio-clean","Add loud highway traffic and honking","Remove all background sound"],answer:0,explain:"Match ambience to the scene — a subtle hum sells the environment without overpowering the voice."},
+      {q:"To make a voice sound distant and muffled, you should…",options:["Reduce high frequencies with a low-pass filter and add slight reverb","Boost the high frequencies","Increase the volume to maximum","Remove all ambience"],answer:0,explain:"A low-pass filter cuts treble for a muffled tone; a touch of reverb adds distance."},
+      {q:"For a conspiracy / 'Big Pharma' style ad, the background music should be…",options:["Dark, suspenseful, mysterious","Upbeat and cheerful","Silent","Fast EDM"],answer:0,explain:"Dark, suspenseful music builds the curiosity and tension these ads rely on."}
+    ]},
+
+  { num:"5", color:"#38BDF8", title:"AI Avatars",
+    subtitle:"Choosing a face, keeping it real, and going hyper-real with Google OMNI.",
+    lesson:
+`An avatar that looks fake ends the ad instantly — and this isn't only for health/supplement brands, it applies across all our brands. Always **follow the reference** for how the avatar should look. Avatars must look natural (skin texture, realistic lighting, micro-expressions), never plastic or glassy.
+
+## Two platforms
+- **Heygen** — the primary tool, for longer videos where realism isn't critical.
+- **Google OMNI** — the most realistic, but ~10 seconds per generation.
+
+## Finding a frame
+Prefer **UGC-style** people. The frame needs **eyes open and visible, lips visible and natural, a well-lit and sharp face, no motion blur, and hands visible**. The screenshot must have **no subtitles or graphics** — clean any text with **Nano Banana Pro** (best used in **Google Flow**, though that's not the only place).
+
+AI-generated avatars should avoid glassy skin and texture-less faces — choose natural imperfection: **natural lines, redness, spots, freckles**, etc.
+
+## Google OMNI
+Google's latest, best in Flow, **10-second limit**. It works like VEO but **doesn't take a last frame**, so OMNI clips can't be chained. That last-frame chaining works for **VEO 3.1 and Kling**.
+
+> OMNI's limits can be worked around, but the workarounds are time-consuming for now.
+
+## Making the clips
+Whichever you use, your prompt should include **no cuts, no transitions, and no added subtitles** — this applies to **both Frames-to-Video and Ingredients-to-Video**.
+- **Frames-to-Video is preferable.**
+- **Ingredients-to-Video** blends three images, but the **first frame and the overall background might change**.`,
+    questions:[
+      {q:"Which is a requirement of a good reference frame?",options:["Eyes closed for a candid look","Motion blur to imply energy","Eyes open, lips visible, well-lit and sharp, no blur, hands visible","On-screen subtitles kept for context"],answer:2,explain:"Clear, well-lit, blur-free frames with visible eyes, lips and hands produce the most realistic avatar."},
+      {q:"To remove subtitles or graphics from a chosen frame, use…",options:["Nano Banana Pro (on Google Flow)","Voice Isolator","Shazam","Eleven Labs Studio"],answer:0,explain:"Nano Banana Pro cleans text from the screenshot before you build the avatar."},
+      {q:"Which tool gives the most realistic avatar motion, with only limited voice-emotion control?",options:["Google OMNI","Heygen","Kling 3","Sora"],answer:0,explain:"OMNI gives the most lifelike motion, but you can only describe tone in text — no voice tags."},
+      {q:"To extend a VEO 3.1 or Kling clip beyond its limit seamlessly, you…",options:["Use the last frame of the previous clip as the first frame of the next prompt","Slow the clip down to fill time","Loop the same seconds","Switch to a static image"],answer:0,explain:"Carrying the last frame into the next prompt creates one continuous-looking recording."},
+      {q:"You want to chain clips using the last-frame trick. Which model can't you do this with?",options:["Google OMNI","VEO 3.1","Kling","They all support it"],answer:0,explain:"OMNI (10-second limit) works like VEO but doesn't take a last frame, so it can't be chained; VEO 3.1 and Kling can."},
+      {q:"Which of these signals an AI avatar that looks fake?",options:["Glassy, plastic-like skin with no texture","Visible skin texture and natural imperfections","Subtle, uneven lighting","Slight micro-expressions"],answer:0,explain:"Fake avatars look glassy and texture-less; real ones have skin texture, natural lines, redness, spots and freckles."}
+    ]},
+
+  { num:"6", color:"#FBBF24", title:"B-Rolls & Realistic AI Images",
+    subtitle:"Where to source visuals, which model to reach for, and how to use them well.",
+    lesson:
+`B-rolls turn abstract claims into things people can see — they make a mechanism instantly understandable.
+
+## Search order
+- Check the **internal B-Roll Folder** first (if you have been given one).
+- Then **TikTok** for real, authentic footage — strip captions and watermarks with **VMAKE**.
+
+## Where the tools live
+**Google Flow** is a Google platform that offers Google's own models cheaply. It's the **preferable** place for the Google models (VEO, OMNI, Nano Banana Pro) — but it's **not the only place**.
+- **Google OMNI** — Google's latest, 10-second limit; works like VEO but doesn't take a last frame (can't be chained).
+- **Nano Banana Pro** — the go-to for editing existing images: swaps, product placement, removing text/logos.
+- **Kling 3** — best for talking-head UGC and animations, with more directional control; struggles beyond ~6s for talking heads due to lip-sync. **Kling 3 does not live on Google Flow** — use **Higgsfield** for Kling (and other non-Google models when needed).
+
+## Using b-rolls well
+- Every b-roll must **directly support the narration** — every second should add value.
+- Match the b-roll to the **target demographic** (age, gender, race). If in doubt, **ask the strategist**.
+- Keep each b-roll on screen for about **2.5–3 seconds**.
+- Ideally **one b-roll covers one complete phrase or sentence** — don't change visuals mid-phrase unless it improves clarity.
+- Frame so the main subject sits roughly at **eye level** — the viewer's eye tends to land on the **upper half of the screen**.
+- If a shot feels **static or flat**, apply a **linear continuous zoom** across its entire duration.
+
+> A dedicated SOP for animations is coming later.
+
+## Generating real-looking footage
+Start from a reference — a reference **image from Pinterest** or a reference **video from TikTok** — and replace the subject with your avatar and/or surroundings. If you generate directly in an AI tool with no reference, it comes out **polished, yellowish, and flat**, so always feed it a realistic reference.
+
+> Real photos have imperfections — texture, uneven light, small blemishes. Over-polished looks fake.`,
+    questions:[
+      {q:"Where should you look for a b-roll first?",options:["The internal B-Roll Folder","Sora","A Google image search","Pinterest"],answer:0,explain:"Check the internal folder first — it's curated from the most-used keywords."},
+      {q:"To strip captions and watermarks off a TikTok clip, use…",options:["VMAKE","Voice Isolator","Kling 3","Shazam"],answer:0,explain:"VMAKE removes text overlays and watermarks automatically."},
+      {q:"When generating footage in an AI tool, how do you avoid polished, yellowish, flat results?",options:["Always give it a realistic reference (image from Pinterest / video from TikTok)","Generate without a reference for more freedom","Just raise the resolution","Add more lighting in the prompt"],answer:0,explain:"Start from a real reference and replace the subject — with no reference, AI tools produce polished, yellowish, flat footage."},
+      {q:"You want your avatar to perform a specific action in a natural UGC style. Use…",options:["Kling 3 or Google OMNI","Sora","Google VEO (cinematic)","Nano Banana Pro"],answer:0,explain:"Kling 3 (great for talking-head UGC) or Google OMNI handle avatar actions in a natural style."},
+      {q:"Best tool for a realistic human avatar with a natural phone-shot look?",options:["Google OMNI","Nano Banana Pro","Sora","Google VEO"],answer:0,explain:"OMNI is Google's latest and best for a realistic, natural phone-shot avatar video."},
+      {q:"Nano Banana Pro is best used for…",options:["Editing existing images — swaps, product placement, removing text","Generating brand-new faces from scratch","Cloning voices","Isolating background music"],answer:0,explain:"Its strength is modifying existing images, not generating faces from scratch."},
+      {q:"Where do the Google tools (VEO, OMNI, Nano Banana Pro) run?",options:["Google Flow","Higgsfield","Heygen","Eleven Labs"],answer:0,explain:"Google Flow is the preferable (and cheapest) place for the Google models — VEO, OMNI, Nano Banana Pro. Kling isn't a Google model, so it lives on Higgsfield instead."},
+      {q:"How long should each b-roll stay on screen?",options:["2.5–3 seconds","0.5–1 second","5–6 seconds","8–10 seconds"],answer:0,explain:"Keep each b-roll on screen for about 2.5–3 seconds."},
+      {q:"A b-roll shot feels static and flat. What should you do?",options:["Apply a linear continuous zoom across its full duration","Delete it and skip a visual there","Speed it up 2×","Add a bright color overlay"],answer:0,explain:"A linear continuous zoom across the whole clip adds life."}
+    ]},
+
+  { num:"7", color:"#A3E635", title:"Transitions & Zooms",
+    subtitle:"When to use them, when not to, and the short list that covers most ads.",
+    lesson:
+`Transitions and zooms are **not mandatory** — a good ad can work without them.
+
+Whether you use them depends on the brief: if it says **replicate the inspiration exactly** and that ad has none, don't add them. When you have creative freedom, they add rhythm and hold attention.
+
+## The short list
+- **Slide left, zoom in/out** — smooth directional flow.
+- **Light leak** — a natural visual break that softens a cut.
+
+## Zooms
+Mostly **Linear Zoom-Ins** to emphasize a key point, product, or emotional moment — a silent signal that says *"pay attention here."* Zoom-outs are rarely needed, only for a reveal or wider perspective. Getting the **flow and timing** right matters more than the effect itself.`,
+    questions:[
+      {q:"Are transitions and zooms required in every ad?",options:["No — only when the brief gives creative freedom","Yes, always","Only in static ads","Only for older audiences"],answer:0,explain:"They're optional; use them with creative freedom, not when told to copy exactly."},
+      {q:"The brief says replicate the inspiration exactly, and it has no transitions. You should…",options:["Not add any transitions or zooms","Add whip transitions for energy","Add a few zooms anyway","Add light leaks between every cut"],answer:0,explain:"Replicate exactly means don't introduce effects the reference doesn't have."},
+      {q:"The most-used zoom, and its purpose, is…",options:["Linear Zoom-In, to emphasize a key point ('pay attention here')","Zoom-out, to reveal a wider scene","Random zoom, to add chaos","Snap zoom, to end the ad"],answer:0,explain:"Linear Zoom-Ins quietly direct attention to important moments."},
+      {q:"What is a Light leak transition used for?",options:["To soften a cut / create a natural visual break","To speed up the footage","To add captions","To emphasize a key point"],answer:0,explain:"Light leak transitions create a natural visual break that softens a cut."}
+    ]},
+
+  { num:"8", color:"#C084FC", title:"Text & Captions",
+    subtitle:"The overlays that stop the scroll and the captions that keep people watching.",
+    lesson:
+`Text is powerful because people often **read before they watch** — a hook overlay sets the tone in the first three seconds and works on mute.
+
+## Text overlays for hooks
+Replicate the inspiration's text style when the brief says so; otherwise use proven, native-looking styles. Recommended fonts, with **TikTok Sans** as the default, plus Inter ExtraBold, Georgia Regular, Proxima Nova Semibold, Helvetica Neue.
+
+## Captions keep people watching
+Everything else on screen stays still, but captions **change every second** — that keeps the viewer "in sync" and boosts retention. They must feel native to the platform.
+
+Quick rules: **3–5 words per change**; **never** over the product, brand name, or key visuals; keep them **inside the safe zone** with consistent size and spacing; use **high-contrast colours**.
+
+## Create captions
+Generate captions with **Premiere Pro Speech-to-Text**.
+- No spelling or grammar mistakes — always check against the script.
+- Timing must match the spoken dialogue precisely.
+- **Group words naturally** so a caption never breaks mid-thought. The "/" marks where a new caption begins:
+- ✅ Correct — "I was / a doctor"
+- ✅ Correct — "I was a doctor"
+- ❌ Wrong — "I was a / doctor"
+- ❌ Wrong — "I / was a doctor"
+- Captions must stay synced with every A-roll and B-roll cut, and **never cross a scene change**.
+
+If you use captioning software outside Premiere Pro (e.g. Submagic or CapCut): export the whole paced timeline as one video, generate captions, review the grouping, then export as a **green-screen video**. Import it back on the **topmost layer**, remove the green with a **chroma / ultra key**, and cut it at every Hook, Body, CTA, A-roll and B-roll transition so captions stay synced.
+
+## Most common caption styles
+**Style 1 — Organic TikTok**
+- Font: Proxima Nova Semibold, 60–72 pt.
+- Colour: usually white with a **black outline** (use a white outline if the font is dark).
+- Shadow: ❌ none — shadows plus outlines (especially black) make text look blurry.
+- Use: fast-paced TikTok/Shorts edits; casual but clean.
+
+**Style 2 — TikTok Box**
+- Font: Proxima Nova Semibold, 60–72 pt.
+- Colour: white text on a **dark box** (black or dark grey).
+- Outline: ❌ none. Shadow: ❌ none.
+- Alignment: centred. Box: **all corners rounded**, including between stacked lines.
+- Use: clear, attention-grabbing captions for educational, commentary, or listicle videos.
+
+**Style 3 — Word-by-word animated (Submagic, CapCut, Captions.ai)**
+- Font: clean, simple sans-serif; medium size — balanced for readability.
+- Colour: **high contrast only** (no dark-on-dark or light-on-light).
+- Shadow: optional, only if it improves visibility — avoid anything that blurs.
+- Alignment: usually bottom centre or bottom left, depending on space.
+- Animation: subtle and easy to follow, never distracting.
+- Timing: each word animates in sync with speech, and subtitles end **exactly when the B-roll ends**.
+
+> **Line structure (applies to all captions):** break lines logically, never mid-thought or mid-sentence.
+
+> Remember: the **reference is the master**.`,
+    questions:[
+      {q:"Why do captions increase retention?",options:["They change constantly, keeping the viewer in sync and watching","They add background music","They replace the voiceover","They shrink the video file"],answer:0,explain:"Constantly-changing captions give the eye a reason to stay locked on the video."},
+      {q:"The ideal amount of caption text per change is…",options:["3–5 words","1 word","A full sentence","10–12 words"],answer:0,explain:"3–5 words per change reads comfortably without overwhelming the frame."},
+      {q:"The default font for text overlays is…",options:["TikTok Sans","Comic Sans","Times New Roman","Papyrus"],answer:0,explain:"TikTok Sans is the go-to for high-performing overlays."},
+      {q:"Captions should never be placed over…",options:["The product, brand name, or key visuals","The sky or plain backgrounds","The lower third of the frame","The avatar's shoulder"],answer:0,explain:"Blocking the product or brand hurts both clarity and the ad's job."},
+      {q:"Grouping caption words naturally, which split is incorrect?",options:["I / was a doctor","I was / a doctor","I was a doctor"],answer:0,explain:"Words that belong together should share a caption; splitting right after 'I' breaks readability."},
+      {q:"Why cut the caption layer at every A-roll and B-roll transition?",options:["So captions stay synced with the edit and never linger across a scene change","To enlarge them","To change the font per scene","To add music"],answer:0,explain:"Captions must stay synced with every cut and never cross a scene change."}
+    ]}
+];
+
+/* ============================ STATE ============================ */
+const SK_MOD="cuttingroom2.modules", SK_STATE="cuttingroom2.state", SK_VER="cuttingroom2.ver";
+/* Bump CONTENT_VERSION whenever the lesson/question content changes.
+   On load, a mismatch clears the old cached copy so the new build always wins. */
+const CONTENT_VERSION="2026-08-11-e";
+const store={get(k){try{const v=localStorage.getItem(k);return v?JSON.parse(v):null}catch(e){return null}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}};
+
+let modules, S;
+(function init(){
+  const fresh = { screen:"start", email:"", admin:false, unlockedUpTo:0, currentIdx:0, answers:{}, shuffles:{} };
+  if(store.get(SK_VER) !== CONTENT_VERSION){
+    // newer build detected — drop stale cached modules/progress, keep only the email for convenience
+    const prevEmail = (store.get(SK_STATE)||{}).email || "";
+    modules = normalize(DEFAULT_MODULES);
+    S = Object.assign({}, fresh, { email:prevEmail });
+    store.set(SK_MOD, null); store.set(SK_STATE, S); store.set(SK_VER, CONTENT_VERSION);
+  } else {
+    modules = normalize(store.get(SK_MOD) || DEFAULT_MODULES);
+    S = store.get(SK_STATE) || fresh;
+  }
+})();
+
+function normalize(list){
+  return list.map((m,i)=>({
+    id:m.id||("m"+i+"_"+Math.random().toString(36).slice(2,7)),
+    num:m.num||String(i+1), color:m.color||"#A78BFA",
+    title:m.title||"Untitled", subtitle:m.subtitle||"", lesson:m.lesson||"",
+    questions:(m.questions||[]).map(q=>({q:q.q||"",options:q.options||["",""],answer:typeof q.answer==="number"?q.answer:0,explain:q.explain||""}))
+  }));
+}
+function saveMod(){store.set(SK_MOD,modules)}
+function saveState(){store.set(SK_STATE,S)}
+
+/* ============================ HELPERS ============================ */
+const $=s=>document.querySelector(s);
+const el=(t,c,h)=>{const e=document.createElement(t);if(c)e.className=c;if(h!=null)e.innerHTML=h;return e};
+function esc(s){return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;")}
+function escAttr(s){return String(s).replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;")}
+function inline(s){return esc(s).replace(/\*\*(.+?)\*\*/g,"<strong>$1</strong>")}
+const DIAGRAMS={
+  timeline:`<figure class="diagram"><svg viewBox="0 0 720 96" width="100%" role="img" aria-label="Master timeline: Hook 1, Hook 2, Hook 3, then Body, then CTA 1, CTA 2, CTA 3">
+    <g font-size="13" font-weight="600" text-anchor="middle">
+      <rect x="6"   y="26" width="96" height="44" rx="8" style="fill:var(--panel-3);stroke:var(--line-2)"/><text x="54"  y="53" style="fill:var(--text-2)">Hook 1</text>
+      <rect x="108" y="26" width="96" height="44" rx="8" style="fill:var(--panel-3);stroke:var(--line-2)"/><text x="156" y="53" style="fill:var(--text-2)">Hook 2</text>
+      <rect x="210" y="26" width="96" height="44" rx="8" style="fill:var(--panel-3);stroke:var(--line-2)"/><text x="258" y="53" style="fill:var(--text-2)">Hook 3</text>
+      <rect x="312" y="20" width="120" height="56" rx="9" style="fill:var(--accent)"/><text x="372" y="52" fill="#06231a">Body</text>
+      <rect x="438" y="26" width="88" height="44" rx="8" style="fill:var(--panel-2);stroke:var(--line-2)"/><text x="482" y="53" style="fill:var(--text-2)">CTA 1</text>
+      <rect x="530" y="26" width="88" height="44" rx="8" style="fill:var(--panel-2);stroke:var(--line-2)"/><text x="574" y="53" style="fill:var(--text-2)">CTA 2</text>
+      <rect x="622" y="26" width="88" height="44" rx="8" style="fill:var(--panel-2);stroke:var(--line-2)"/><text x="666" y="53" style="fill:var(--text-2)">CTA 3</text>
+    </g>
+  </svg><figcaption>Master timeline — all Hooks, then the Body, then all CTAs.</figcaption></figure>`,
+  nesting:`<figure class="diagram"><svg viewBox="0 0 720 250" width="100%" role="img" aria-label="One nested Body shared across several Hook plus Body plus CTA deliverables">
+    <g font-size="12.5" text-anchor="middle">
+      <path d="M150 121 C 220 121, 230 44,  300 44"  fill="none" style="stroke:var(--line-2)" stroke-width="1.5"/>
+      <path d="M150 121 C 230 121, 230 121, 300 121" fill="none" style="stroke:var(--line-2)" stroke-width="1.5"/>
+      <path d="M150 121 C 220 121, 230 198, 300 198" fill="none" style="stroke:var(--line-2)" stroke-width="1.5"/>
+      <rect x="20" y="96" width="130" height="52" rx="10" style="fill:var(--accent)"/>
+      <text x="85" y="118" fill="#06231a" font-weight="700">Body</text><text x="85" y="135" fill="#06231a" font-size="11">(nested once)</text>
+      <g font-weight="600">
+        <rect x="300" y="24"  width="70" height="40" rx="7" style="fill:var(--panel-3);stroke:var(--line-2)"/><text x="335" y="49" style="fill:var(--text-2)">Hook 1</text>
+        <rect x="378" y="24"  width="60" height="40" rx="7" style="fill:var(--accent)"/><text x="408" y="49" fill="#06231a">Body</text>
+        <rect x="446" y="24"  width="66" height="40" rx="7" style="fill:var(--panel-2);stroke:var(--line-2)"/><text x="479" y="49" style="fill:var(--text-2)">CTA 3</text>
+        <rect x="300" y="101" width="70" height="40" rx="7" style="fill:var(--panel-3);stroke:var(--line-2)"/><text x="335" y="126" style="fill:var(--text-2)">Hook 2</text>
+        <rect x="378" y="101" width="60" height="40" rx="7" style="fill:var(--accent)"/><text x="408" y="126" fill="#06231a">Body</text>
+        <rect x="446" y="101" width="66" height="40" rx="7" style="fill:var(--panel-2);stroke:var(--line-2)"/><text x="479" y="126" style="fill:var(--text-2)">CTA 1</text>
+        <rect x="300" y="178" width="70" height="40" rx="7" style="fill:var(--panel-3);stroke:var(--line-2)"/><text x="335" y="203" style="fill:var(--text-2)">Hook 4</text>
+        <rect x="378" y="178" width="60" height="40" rx="7" style="fill:var(--accent)"/><text x="408" y="203" fill="#06231a">Body</text>
+        <rect x="446" y="178" width="66" height="40" rx="7" style="fill:var(--panel-2);stroke:var(--line-2)"/><text x="479" y="203" style="fill:var(--text-2)">CTA 2</text>
+      </g>
+    </g>
+  </svg><figcaption>Fix the Body once — every Hook + CTA version updates with it.</figcaption></figure>`
+};
+function renderLesson(text){
+  const lines=text.split("\n");let html="",para=[],list=[];
+  const fp=()=>{if(para.length){html+="<p>"+inline(para.join(" "))+"</p>";para=[]}};
+  const fl=()=>{if(list.length){html+="<ul>"+list.map(li=>"<li>"+inline(li)+"</li>").join("")+"</ul>";list=[]}};
+  for(const raw of lines){const line=raw.trim();
+    if(line===""){fp();fl();continue}
+    const dm=line.match(/^\[\[diagram:([a-z0-9_-]+)\]\]$/i);
+    if(dm){fp();fl();html+=(DIAGRAMS[dm[1]]||"");continue}
+    if(line.startsWith("## ")){fp();fl();html+="<h3>"+inline(line.slice(3))+"</h3>";continue}
+    if(line.startsWith("> ")){fp();fl();html+="<div class='callout'>"+inline(line.slice(2))+"</div>";continue}
+    if(line.startsWith("- ")){fp();list.push(line.slice(2));continue}
+    fl();para.push(line);}
+  fp();fl();return html;
+}
+function passMark(n){return Math.ceil(n*PASS)}
+function shuffleFor(mi,qi,n){
+  S.shuffles[mi]=S.shuffles[mi]||{};
+  if(!S.shuffles[mi][qi]){const a=[...Array(n).keys()];for(let i=n-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}S.shuffles[mi][qi]=a;saveState()}
+  return S.shuffles[mi][qi];
+}
+function modComplete(mi){const a=S.answers[mi]||{};return Object.keys(a).length===modules[mi].questions.length && modules[mi].questions.length>0}
+function modScore(mi){const a=S.answers[mi]||{};let c=0;modules[mi].questions.forEach((q,qi)=>{if(a[qi]===q.answer)c++});return c}
+function isUnlocked(mi){return S.admin || mi<=S.unlockedUpTo}
+
+/* ============================ RENDER ============================ */
+function render(){
+  document.documentElement.style.setProperty('--accent', S.screen==="course"?modules[S.currentIdx].color:"#A78BFA");
+  $("#footer").textContent="THE CUTTING ROOM · "+modules.length+" MODULES · "+modules.reduce((s,m)=>s+m.questions.length,0)+" QUESTIONS · PASS MARK "+(PASS*100)+"% · BUILD "+CONTENT_VERSION;
+  if(S.screen==="start") return renderStart();
+  if(S.screen==="done") return renderScore();
+  return renderCourse();
+}
+
+function topbar(){
+  let tools="";
+  if(S.admin) tools=`<span class="admin-badge">● ADMIN</span>
+    <button class="tool" id="tManage">Manage</button>
+    <button class="tool" id="tExport">Export</button>
+    <button class="tool" id="tImport">Import</button>
+    <button class="tool" id="tExit">Exit admin</button>`;
+  return `<div class="topbar"><span class="rec"></span>
+    <div class="brand"><div class="kick">Ad editor training</div><h1>The Cutting Room</h1></div>
+    <div class="top-tools">${tools}</div></div>`;
+}
+function wireTop(){
+  if(!S.admin) return;
+  $("#tManage").onclick=openManage; $("#tExport").onclick=exportJSON;
+  $("#tImport").onclick=()=>importPrompt(); $("#tExit").onclick=()=>{S.admin=false;saveState();render()};
+}
+
+function renderStart(){
+  $("#app").innerHTML=topbar()+`
+  <div class="card"><div class="pad">
+    <div class="eyebrow"><span class="sq"></span>Start</div>
+    <h1 class="title">Ready when you are</h1>
+    <p class="start-lead">${modules.length} modules, ${modules.reduce((s,m)=>s+m.questions.length,0)} questions. Learn each module, then answer to unlock the next.</p>
+    <div class="field"><label>Your email</label><input type="email" id="email" placeholder="name@company.com" value="${escAttr(S.email)}" /></div>
+    <div class="err" id="emailErr"></div>
+    <div class="warn"><h4>Before you begin</h4><ul>
+      <li>Your <b>first answer</b> to each question is final — you can't change it.</li>
+      <li>Modules unlock <b>one at a time</b>, after you finish the one before.</li>
+      <li>Once you complete a module, you <b>can't go back</b> to it.</li>
+    </ul></div>
+    <button class="btn pri" id="begin">Start course</button>
+    <div class="admin-row">
+      <button class="admin-toggle" id="adminToggle">▸ Admin access</button>
+      <div class="admin-panel" id="adminPanel">
+        <div class="admin-fields">
+          <input type="password" id="adminCode" placeholder="Admin passcode" />
+          <button class="btn" style="width:auto;flex:none" id="adminGo">Unlock all</button>
+        </div>
+        <div class="err" id="adminErr"></div>
+      </div>
+    </div>
+  </div></div>`;
+  wireTop();
+  $("#adminToggle").onclick=()=>{const p=$("#adminPanel");p.classList.toggle("show");$("#adminToggle").textContent=(p.classList.contains("show")?"▾":"▸")+" Admin access"};
+  $("#begin").onclick=()=>{
+    const em=$("#email").value.trim();
+    if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(em)){$("#emailErr").textContent="Enter a valid email to start.";return}
+    S.email=em; S.screen="course"; if(S.currentIdx>S.unlockedUpTo)S.currentIdx=S.unlockedUpTo; saveState(); render();
+  };
+  $("#adminGo").onclick=()=>{
+    if($("#adminCode").value===ADMIN_CODE){S.admin=true;S.screen="course";saveState();render()}
+    else $("#adminErr").textContent="Wrong passcode.";
+  };
+  $("#adminCode").addEventListener("keydown",e=>{if(e.key==="Enter")$("#adminGo").click()});
+}
+
+function renderTimeline(){
+  const done=modules.filter((m,i)=>modComplete(i)).length;
+  let segs="";
+  modules.forEach((m,i)=>{
+    const dn=modComplete(i), active=i===S.currentIdx, unlocked=isUnlocked(i);
+    const cls="seg"+(active?" active":"")+(dn?" done":"")+(S.admin?" clickable":"");
+    segs+=`<button class="${cls}" data-i="${i}" style="--seg-accent:${m.color}">
+      <span class="fill" style="background:${m.color}"></span>
+      <span class="ic" style="color:${dn?m.color:'var(--muted)'}">${dn?'✓':(unlocked?'':'🔒')}</span>
+      <span class="num" style="color:${active||dn?m.color:'var(--muted)'}">M${esc(m.num)}</span></button>`;
+  });
+  return `<div class="tl-meta"><span>TIMELINE · <b>${done}</b> / ${modules.length} DONE</span><span>M${esc(modules[S.currentIdx].num)} · ${esc(modules[S.currentIdx].title)}</span></div>
+    <div class="timeline" id="timeline">${segs}</div>`;
+}
+
+function renderCourse(){
+  const mi=S.currentIdx, m=modules[mi];
+  const ans=S.answers[mi]||{}; S.answers[mi]=ans;
+  const qhtml = m.questions.map((q,qi)=>{
+    const order=shuffleFor(mi,qi,q.options.length);
+    const answered=ans[qi]!==undefined;
+    const opts=order.map((oi,pos)=>{
+      let cls="opt", tag="";
+      if(answered){ if(oi===q.answer){cls+=" correct";} else if(oi===ans[qi]){cls+=" wrong";} else {cls+=" dim";}
+        if(oi===ans[qi]) tag=`<span class="locktag">🔒 your answer</span>`;
+      }
+      return `<button class="${cls}" ${answered?"disabled":""} data-q="${qi}" data-o="${oi}">
+        <span class="key">${String.fromCharCode(65+pos)}</span><span>${esc(q.options[oi])}</span>${tag}</button>`;
+    }).join("");
+    return `<div class="q"><div class="qhead"><span class="qn">Q${qi+1}</span><span class="qt">${esc(q.q)}</span></div>
+      ${opts}<div class="explain ${answered?"show":""}" id="exp-${mi}-${qi}"><b>WHY</b>${esc(q.explain)}</div></div>`;
+  }).join("");
+
+  const total=m.questions.length, count=Object.keys(ans).length, allDone=count===total;
+  const lastMod = mi===modules.length-1;
+  $("#app").innerHTML=topbar()+renderTimeline()+`
+  <div class="card"><div class="pad">
+    <div class="eyebrow"><span class="sq"></span>Module ${esc(m.num)} · Lesson</div>
+    <h1 class="title">${esc(m.title)}</h1>
+    <p class="subtitle">${esc(m.subtitle)}</p>
+    <div class="rule"></div>
+    <div class="prose">${renderLesson(m.lesson)}</div>
+    <div class="quiz">
+      <div class="quiz-h"><span class="lab">Comprehension check</span><span class="cnt" id="qcount">${count} / ${total} answered</span></div>
+      <div class="warn-mini">! Your first tap is your answer — it locks in and can't be changed.</div>
+      <div class="scorebar"><i id="sfill" style="width:${total?count/total*100:0}%"></i></div>
+      ${qhtml}
+    </div>
+    <div class="btn-row">
+      <button class="btn pri" id="nextBtn" ${allDone?"":"disabled"}>${lastMod?"Finish course & see scorecard":"Complete module & unlock next"}</button>
+      <div class="subnote">${S.admin?"Admin mode · you can revisit any module":"No going back once completed"}</div>
+    </div>
+  </div></div>`;
+  wireTop();
+  if(S.admin){document.querySelectorAll(".seg.clickable").forEach(s=>s.onclick=()=>{S.currentIdx=+s.dataset.i;saveState();render();window.scrollTo({top:0,behavior:'smooth'})})}
+  document.querySelectorAll(".opt:not([disabled])").forEach(b=>b.onclick=onAnswer);
+  $("#nextBtn").onclick=completeModule;
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+function onAnswer(e){
+  const b=e.currentTarget, mi=S.currentIdx, qi=+b.dataset.q, oi=+b.dataset.o;
+  const ans=S.answers[mi]; if(ans[qi]!==undefined) return;
+  ans[qi]=oi; saveState();
+  const q=modules[mi].questions[qi];
+  document.querySelectorAll(`.opt[data-q="${qi}"]`).forEach(o=>{
+    const j=+o.dataset.o; o.disabled=true;
+    if(j===q.answer){o.classList.add("correct")} else if(j===oi){o.classList.add("wrong")} else {o.classList.add("dim")}
+    if(j===oi){o.insertAdjacentHTML("beforeend",'<span class="locktag">🔒 your answer</span>')}
+  });
+  $("#exp-"+mi+"-"+qi).classList.add("show");
+  const total=modules[mi].questions.length, count=Object.keys(ans).length;
+  $("#qcount").textContent=count+" / "+total+" answered";
+  $("#sfill").style.width=(count/total*100)+"%";
+  if(count===total) $("#nextBtn").disabled=false;
+}
+
+function completeModule(){
+  const mi=S.currentIdx;
+  if(!modComplete(mi)) return;
+  if(mi>=S.unlockedUpTo) S.unlockedUpTo=Math.min(mi+1,modules.length-1);
+  if(mi<modules.length-1){ if(!S.admin) S.currentIdx=mi+1; }
+  else { S.screen="done"; }
+  saveState(); render();
+}
+
+function renderScore(){
+  const rows=modules.map((m,i)=>{
+    const sc=modScore(i), tot=m.questions.length, pct=tot?Math.round(sc/tot*100):0;
+    return `<div class="sc-row">
+      <span class="sc-dot" style="background:${m.color}"></span>
+      <span class="sc-name"><b>${esc(m.title)}</b><span>M${esc(m.num)}</span></span>
+      <span class="sc-mini"><i style="width:${pct}%;background:${m.color}"></i></span>
+      <span class="sc-score">${sc}/${tot}</span></div>`;
+  }).join("");
+  const max=modules.reduce((s,m)=>s+m.questions.length,0);
+  let got=0; modules.forEach((m,i)=>got+=modScore(i));
+  const pct=max?Math.round(got/max*100):0, passed=got>=passMark(max);
+  $("#app").innerHTML=topbar()+`
+  <div class="card"><div class="pad">
+    <div class="sc-head"><div class="eyebrow" style="justify-content:center"><span class="sq"></span>Course complete</div>
+    <h1 class="title">Your scorecard</h1></div>
+    <div class="sc-rows">${rows}</div>
+    <div class="sc-total">
+      <div class="big ${passed?"pass":"fail"}">${pct}%</div>
+      <div class="msg"><h4>${passed?"Passed — solid work.":"Below the pass mark."}</h4>
+        <p>You scored ${got} of ${max}. ${passed?"You're cleared on the SOP.":"Pass mark is "+passMark(max)+"/"+max+" ("+(PASS*100)+"%)."}</p></div>
+    </div>
+    <div class="sc-foot">Results recorded for ${esc(S.email||"—")} · delivery is off (collect-only)</div>
+    <div class="btn-row"><button class="btn" id="restart">Start over</button></div>
+  </div></div>`;
+  wireTop();
+  deliverResults({email:S.email,score:got,max:max,percent:pct,perModule:modules.map((m,i)=>({module:m.title,score:modScore(i),of:m.questions.length})),finishedAt:new Date().toISOString()});
+  $("#restart").onclick=()=>{
+    S={screen:"start",email:S.email,admin:S.admin,unlockedUpTo:0,currentIdx:0,answers:{},shuffles:{}};
+    saveState(); render(); window.scrollTo({top:0,behavior:'smooth'});
+  };
+}
+
+/* ============================ EMAIL HOOK (delivery OFF) ============================ */
+function deliverResults(payload){
+  /* Email delivery is intentionally OFF (collect-only). To turn it on later,
+     uncomment ONE of these and paste your own key/URL:
+
+     // EmailJS:
+     // emailjs.send("service_id","template_id",payload,"public_key");
+
+     // Formspree:
+     // fetch("https://formspree.io/f/XXXXXXX",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload)});
+
+     // Google Apps Script web app:
+     // fetch("YOUR_WEBAPP_URL",{method:"POST",body:JSON.stringify(payload)});
+  */
+  try{ console.log("Quiz results (not sent):", payload); }catch(e){}
+}
+
+/* ============================ ADMIN: manage / export / import ============================ */
+let draft=null;
+function openManage(){draft=JSON.parse(JSON.stringify(modules));manageList();$("#overlay").classList.add("show")}
+function closeModal(){$("#overlay").classList.remove("show")}
+function manageList(){
+  $("#modalTitle").textContent="Manage modules";
+  const b=$("#modalBody");b.className="modal-b";b.innerHTML="";
+  draft.forEach((m,i)=>{
+    const r=el("div","mrow",`<span class="mc">M${esc(m.num)}</span><span class="mt">${esc(m.title)}</span>
+      <button class="mbtn" data-a="up" data-i="${i}" ${i===0?"disabled":""}>▲</button>
+      <button class="mbtn" data-a="down" data-i="${i}" ${i===draft.length-1?"disabled":""}>▼</button>
+      <button class="mbtn" data-a="edit" data-i="${i}">Edit</button>
+      <button class="mbtn danger" data-a="del" data-i="${i}">Delete</button>`);
+    b.appendChild(r);
+  });
+  b.querySelectorAll(".mbtn").forEach(btn=>btn.onclick=()=>{const i=+btn.dataset.i,a=btn.dataset.a;
+    if(a==="up"&&i>0){[draft[i-1],draft[i]]=[draft[i],draft[i-1]];manageList()}
+    if(a==="down"&&i<draft.length-1){[draft[i+1],draft[i]]=[draft[i],draft[i+1]];manageList()}
+    if(a==="del"){draft.splice(i,1);manageList();toast("Removed — Cancel to discard, Save to keep")}
+    if(a==="edit"){editModule(i)}});
+  $("#modalFooter").innerHTML=`<button class="btn" id="addMod">+ Add module</button><span class="spacer"></span><button class="btn" id="cancelMg">Cancel</button><button class="btn pri" id="saveMg">Save</button>`;
+  $("#addMod").onclick=()=>{draft.push({id:"m_"+Math.random().toString(36).slice(2,8),num:String(draft.length+1),color:"#A78BFA",title:"New module",subtitle:"",lesson:"Write the lesson here.\n\n## A subheading\n- a bullet point\n> a note",questions:[{q:"Sample?",options:["Right","Wrong"],answer:0,explain:"Because…"}]});editModule(draft.length-1)};
+  $("#cancelMg").onclick=closeModal;
+  $("#saveMg").onclick=()=>{modules=normalize(draft);saveMod();S.shuffles={};if(S.currentIdx>=modules.length)S.currentIdx=modules.length-1;if(S.unlockedUpTo>=modules.length)S.unlockedUpTo=modules.length-1;saveState();closeModal();render();toast("Modules saved")};
+}
+function editModule(i){
+  const m=draft[i];$("#modalTitle").textContent="Edit M"+m.num;
+  const b=$("#modalBody");b.className="modal-b medit";
+  b.innerHTML=`<div class="field"><label>Number</label><input id="e-num" value="${escAttr(m.num)}"/></div>
+    <div class="field"><label>Accent color (hex)</label><input id="e-color" value="${escAttr(m.color)}"/></div>
+    <div class="field"><label>Title</label><input id="e-title" value="${escAttr(m.title)}"/></div>
+    <div class="field"><label>Subtitle</label><input id="e-sub" value="${escAttr(m.subtitle)}"/></div>
+    <div class="field"><label>Lesson</label><textarea id="e-lesson">${esc(m.lesson)}</textarea>
+      <div class="hint">## heading · - bullet · &gt; note · blank line = paragraph · **bold**</div></div>
+    <div class="field"><label>Questions</label><div id="e-qs"></div><button class="mbtn" id="addQ" style="margin-top:6px">+ question</button></div>`;
+  const qw=$("#e-qs");
+  function drawQs(){qw.innerHTML="";m.questions.forEach((q,qi)=>{
+    const d=el("div","qedit",`<div class="qtop"><input value="${escAttr(q.q)}" data-qi="${qi}" data-k="q" placeholder="Question"/><button class="mbtn danger" data-del="${qi}">✕</button></div><div class="opts-${qi}"></div><button class="mbtn" data-addopt="${qi}" style="margin:4px 0 8px">+ option</button><input value="${escAttr(q.explain)}" data-qi="${qi}" data-k="explain" placeholder="Explanation"/>`);
+    qw.appendChild(d);const ow=d.querySelector(".opts-"+qi);
+    q.options.forEach((opt,oi)=>{const line=el("div","optline",`<input type="radio" name="ans-${qi}" ${q.answer===oi?"checked":""} data-ans="${qi}" data-oi="${oi}" title="correct"/><input type="text" value="${escAttr(opt)}" data-opt="${qi}" data-oi="${oi}" placeholder="Option ${String.fromCharCode(65+oi)}"/><button class="rm" data-rmopt="${qi}" data-oi="${oi}">✕</button>`);ow.appendChild(line)});
+  });
+  qw.querySelectorAll("input[data-k]").forEach(inp=>inp.oninput=e=>m.questions[+e.target.dataset.qi][e.target.dataset.k]=e.target.value);
+  qw.querySelectorAll("input[data-opt]").forEach(inp=>inp.oninput=e=>m.questions[+e.target.dataset.opt].options[+e.target.dataset.oi]=e.target.value);
+  qw.querySelectorAll("input[data-ans]").forEach(inp=>inp.onchange=e=>m.questions[+e.target.dataset.ans].answer=+e.target.dataset.oi);
+  qw.querySelectorAll("[data-del]").forEach(btn=>btn.onclick=()=>{m.questions.splice(+btn.dataset.del,1);drawQs()});
+  qw.querySelectorAll("[data-addopt]").forEach(btn=>btn.onclick=()=>{m.questions[+btn.dataset.addopt].options.push("");drawQs()});
+  qw.querySelectorAll("[data-rmopt]").forEach(btn=>btn.onclick=()=>{const q=m.questions[+btn.dataset.rmopt],oi=+btn.dataset.oi;if(q.options.length<=2){toast("Need at least 2 options");return}q.options.splice(oi,1);if(q.answer>=q.options.length)q.answer=0;drawQs()});
+  }
+  drawQs();
+  $("#addQ").onclick=()=>{m.questions.push({q:"",options:["",""],answer:0,explain:""});drawQs()};
+  $("#e-num").oninput=e=>m.num=e.target.value; $("#e-color").oninput=e=>m.color=e.target.value;
+  $("#e-title").oninput=e=>m.title=e.target.value; $("#e-sub").oninput=e=>m.subtitle=e.target.value;
+  $("#e-lesson").oninput=e=>m.lesson=e.target.value;
+  $("#modalFooter").innerHTML=`<button class="btn" id="backMg">← Back</button><span class="spacer"></span><button class="btn pri" id="doneEdit">Done</button>`;
+  $("#backMg").onclick=manageList; $("#doneEdit").onclick=manageList;
+}
+function exportJSON(){const data=JSON.stringify(modules,null,2);const bl=new Blob([data],{type:"application/json"});const a=document.createElement("a");a.href=URL.createObjectURL(bl);a.download="cutting-room-modules.json";a.click();URL.revokeObjectURL(a.href);toast("Exported JSON")}
+function importPrompt(){const inp=document.createElement("input");inp.type="file";inp.accept="application/json";inp.onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{try{const p=JSON.parse(r.result);if(!Array.isArray(p))throw 0;modules=normalize(p);saveMod();S.shuffles={};S.currentIdx=0;if(S.unlockedUpTo>=modules.length)S.unlockedUpTo=modules.length-1;saveState();render();toast("Imported "+modules.length+" modules")}catch(err){toast("Import failed — invalid JSON")}};r.readAsText(f)};inp.click()}
+
+let toastT;function toast(m){const t=$("#toast");t.textContent=m;t.classList.add("show");clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove("show"),2200)}
+
+$("#modalClose").onclick=closeModal;
+$("#overlay").addEventListener("click",e=>{if(e.target.id==="overlay")closeModal()});
+document.addEventListener("keydown",e=>{if(e.key==="Escape")closeModal()});
+
+render();
+</script>
+</body>
+</html>
